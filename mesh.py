@@ -4,6 +4,7 @@ import os
 import OpenGL.GL as GL
 import numpy as np
 from ctypes import sizeof, c_float, c_void_p
+from cpe3d import Object3D, Camera, Transformation3D, Text
 import pyrr
 
 class Mesh():
@@ -61,6 +62,17 @@ class Mesh():
         # copie des indices sur la carte graphique
         GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER,self.faces,GL.GL_STATIC_DRAW)
         return vao
+
+    # Enables multiple instances of the same obj file. The vao and position change as told
+    def create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z):
+        object_id = object.load_to_gpu()
+        tr = Transformation3D()
+        tr.translation.x = tr_translation_x
+        tr.translation.y = tr_translation_y
+        tr.translation.z = tr_translation_z
+        tr.rotation_center.z = tr_rotation_center_z
+        liste_data = [object_id, tr]
+        return liste_data
 
     def get_nb_triangles(self):
         return len(self.faces)

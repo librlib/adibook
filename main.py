@@ -3,11 +3,13 @@ import glutils
 from mesh import Mesh
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import numpy as np
-import OpenGL.GL as GL
+import OpenGL.GLUT as glut
 import pyrr
-#Test Push Prol
+import time
+viewer = ViewerGL()
+programGUI_id = glutils.create_program_from_file('gui.vert', 'gui.frag')
 def main():
-    viewer = ViewerGL()
+    
 
     viewer.set_camera(Camera())
     viewer.cam.transformation.translation.y = 2
@@ -42,13 +44,34 @@ def main():
     m = Mesh.load_obj('cube.obj')
     m.normalize()
     m.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
-    tr = Transformation3D()
-    tr.translation.y = -np.amin(m.vertices, axis=0)[1]
-    tr.translation.z = -5
-    tr.rotation_center.z = 0.2
-    texture = glutils.load_texture('cube.jpg')
-    o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
-    viewer.add_object(o)
+    nb_triangle = m.get_nb_triangles()
+    tr_translation_y = -np.amin(m.vertices, axis=0)[1]
+    # Creates vao ids and coordinates
+    # create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z)
+    object_list = []
+    object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 0, tr_translation_y, 0, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 5, tr_translation_y, 0, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 0, tr_translation_y, 3, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 5, tr_translation_y, 3, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 0, tr_translation_y, -3, 0.2)
+    object_list.append(object_data)
+    object_data = Mesh.create_instance(m, 5, tr_translation_y, -3, 0.2)
+    object_list.append(object_data)
+    texture = glutils.load_texture('fence_ori.png')
+
+    # For now, add_object must be called once for every instance
+    number_of_objects = len(object_list)
+    for i in range(number_of_objects):
+        object_data = object_list[i]
+        o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
+        viewer.add_object(o)
+    
 
     # Circuit mario
     m = Mesh()
@@ -61,14 +84,27 @@ def main():
     o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, Transformation3D())
     viewer.add_object(o)
 
-    # vao = Text.initalize_geometry()
-    # texture = glutils.load_texture('fontB.jpg')
-    # o = Text('Bonjour les', np.array([-0.8, 0.3], np.float32), np.array([0.8, 0.8], np.float32), vao, 2, programGUI_id, texture)
-    # viewer.add_object(o)
-    # o = Text('3ETI', np.array([-0.5, -0.2], np.float32), np.array([0.5, 0.3], np.float32), vao, 2, programGUI_id, texture)
-    # viewer.add_object(o)
+    vao = Text.initalize_geometry()
+    texture = glutils.load_texture('fontB.jpg')
+    o = Text('00:00', np.array([0.70, 0.9], np.float32), np.array([0.97, 0.99], np.float32), vao, 2, programGUI_id, texture)
+    viewer.add_object(o)
 
+    current_time = time.time()
+    glut.glutInit(())
+    glut.glutTimerFunc(1000, main, 0)
+
+    vao = Text.initalize_geometry()
+    texture = glutils.load_texture('fontB.jpg')
+    new_time = current_time + 1
+    o = Text(str(new_time), np.array([0.70, 0.9], np.float32), np.array([0.97, 0.99], np.float32), vao, 2, programGUI_id, texture)
+    ViewerGL.del_object(viewer)
+    ViewerGL.add_object(viewer, o)
     viewer.run()
+
+    
+
+
+    
 
 
 if __name__ == '__main__':

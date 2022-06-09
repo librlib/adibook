@@ -2,9 +2,11 @@
 
 import OpenGL.GL as GL
 import glfw
+import OpenGL.GLUT as glut
 import pyrr
 import numpy as np
-from cpe3d import Object3D
+from cpe3d import Object3D, Text
+import time
 
 class ViewerGL:
     def __init__(self):
@@ -50,6 +52,8 @@ class ViewerGL:
             glfw.swap_buffers(self.window)
             # gestion des évènements
             glfw.poll_events()
+            
+            
         
     def key_callback(self, win, key, scancode, action, mods):
         # sortie du programme si appui sur la touche 'échappement'
@@ -59,6 +63,10 @@ class ViewerGL:
     
     def add_object(self, obj):
         self.objs.append(obj)
+
+    def del_object(self):
+        self.objs.pop()
+    
 
     def set_camera(self, cam):
         self.cam = cam
