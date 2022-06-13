@@ -43,7 +43,7 @@ def main():
 
     m = Mesh.load_obj('cube.obj')
     m.normalize()
-    m.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+    m.apply_matrix(pyrr.matrix44.create_from_scale([0, 0, 0, 0]))
     nb_triangle = m.get_nb_triangles()
     tr_translation_y = -np.amin(m.vertices, axis=0)[1]
     # Creates vao ids and coordinates
@@ -51,19 +51,8 @@ def main():
     object_list = []
     object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
     object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-    texture = glutils.load_texture('fence_ori.png')
+    texture = glutils.load_texture('cube.jpg')
+
 
     # For now, add_object must be called once for every instance
     number_of_objects = len(object_list)
@@ -72,6 +61,20 @@ def main():
         o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
         viewer.add_object(o)
     
+    # Création de la mesh pour les monticules de terre
+    montMesh = Mesh.load_obj('monticule.obj')
+    montMesh.normalize()
+    montMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+
+    # Création de la mesh pour le stage 1 des fleurs
+    fleurMesh = Mesh.load_obj('fleur1.obj')
+    fleurMesh.normalize()
+    fleurMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+
+    # Création de la mesh pour le stage 2 des fleurs
+    fleurMesh = Mesh.load_obj('fleur1.obj')
+    fleurMesh.normalize()
+    fleurMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
 
     # Circuit mario
     m = Mesh()
@@ -90,7 +93,7 @@ def main():
     viewer.add_object(o)
 
     current_time = time.time()
-    glut.glutInit(())
+    glut.glutInit()
     glut.glutTimerFunc(1000, main, 0)
 
     vao = Text.initalize_geometry()
