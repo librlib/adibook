@@ -14,7 +14,6 @@ from math import sqrt
 
 start_time = time.time()
 inventaire_state = False
-map_state = False
 
 
 class ViewerGL:
@@ -42,6 +41,7 @@ class ViewerGL:
 
         self.objs = []
         self.touch = {}
+        self.planet= []
 
         # Variables liées au mouvement de la souris
         self.pitch = 0
@@ -61,6 +61,8 @@ class ViewerGL:
                     self.update_camera(obj.program)
                 obj.draw()
 
+            for object in object_list2 :
+                return
             # changement de buffer d'affichage pour éviter un effet de scintillement
             glfw.swap_buffers(self.window)
             # gestion des évènements
@@ -184,26 +186,19 @@ class ViewerGL:
             self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] -= 0.1
         if glfw.KEY_L in self.touch and self.touch[glfw.KEY_L] > 0:
             self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] += 0.1
+        
+        # Création du timer et affichage
         if start_time != 0:
             vao = Text.initalize_geometry()
             texture = glutils.load_texture('fontB.jpg')
             #print('getting into E')
             new_time = time.time()
-            o = Text(str(-(start_time-new_time)), np.array([-0.10, 0.90], np.float32), np.array([0.90, 0.99], np.float32), vao, 2, programGUI_id, texture)
+            o = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
             ViewerGL.del_object(viewer, 'timer')
             ViewerGL.add_object(viewer, o)
-        elif map_state == False :
-            m = Mesh()
-            p0, p1, p2, p3 = [-120, 0, -120], [120, 0, -120], [120, 0, 120], [-120, 0, 120]
-            n, c = [0, 1, 0], [1, 1, 1]
-            t0, t1, t2, t3 = [0, 0], [1, 0], [1, 1], [0, 1]
-            m.vertices = np.array([[p0 + n + c + t0], [p1 + n + c + t1], [p2 + n + c + t2], [p3 + n + c + t3]], np.float32)
-            m.faces = np.array([[0, 1, 2], [0, 2, 3]], np.uint32)
-            texture = glutils.load_texture('circuit.jpg')
-            o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, Transformation3D())
-            viewer.add_object(o)
-            map_state = True
-        if glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
+        
+        # Création de l'inventaire lors de la pression de la touche E
+        while glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
                 texture = glutils.load_texture('inventory_test.jpg')
@@ -218,6 +213,7 @@ class ViewerGL:
 viewer = ViewerGL()
 programGUI_id = glutils.create_program_from_file('gui.vert', 'gui.frag')
 program3d_id = glutils.create_program_from_file('shader.vert', 'shader.frag')
+object_list2 = []
 def main():
     
 
@@ -252,11 +248,13 @@ def main():
     # viewer.add_object(o)
 
     m = Mesh.load_obj('cube.obj')
-    m2 = Mesh.load_obj('sphere.obj')
+    sphereMesh = Mesh.load_obj('sphere.obj')
+    sphereMesh.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
+    Sun = Astre()
+    Moon = Astre()
     m.normalize()
     m2.normalize()
     m.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
-    m2.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
     nb_triangle = m.get_nb_triangles()
     nb_triangle2 = m2.get_nb_triangles()
     tr_translation_y = -np.amin(m.vertices, axis=0)[1]
@@ -265,7 +263,7 @@ def main():
     # create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z)
     # y is the altitude. z is front and back. x is left or right
     object_list = []
-    object_list2 = []
+    
 
     # Cubes
     object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
