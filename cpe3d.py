@@ -84,7 +84,7 @@ class Text(Object):
             loc = GL.glGetUniformLocation(self.program, "start")
             if (loc == -1) :
                 print("Pas de variable uniforme : start")
-            GL.glUniform2f(loc, self.bottomLeft[0]+idx*size[0], self.bottomLeft[1], 0)
+            GL.glUniform2f(loc, self.bottomLeft[0]+idx*size[0], self.bottomLeft[1])
 
             loc = GL.glGetUniformLocation(self.program, "c")
             if (loc == -1) :
