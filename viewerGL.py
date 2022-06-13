@@ -77,10 +77,10 @@ class ViewerGL:
     def add_object(self, obj):
         self.objs.append(obj)
 
-    def del_object(self, object_type):
+    def del_object(self, object_type = None):
         if object_type == 'timer' :
             self.objs.pop()
-        return
+        
     
 
     def set_camera(self, cam):
@@ -206,16 +206,11 @@ class ViewerGL:
         if glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
-                texture = glutils.load_texture('circuit.jpg')
-                o = Text('test', np.array([-0.10, 0.90], np.float32), np.array([0.30, 0.3], np.float32), vao, 2, programGUI_id, texture)
+                texture = glutils.load_texture('inventory_test.jpg')
+                o = Text('B', np.array([-0.10, 0.20], np.float32), np.array([0.80, 0.9], np.float32), vao, 2, programGUI_id, texture)
                 ViewerGL.del_object(viewer, 'timer')
                 ViewerGL.add_object(viewer, o)
             return
-        # if glfw.KEY_SPACE in self.touch and self.touch[glfw.KEY_SPACE] > 0:
-        #     self.cam.transformation.rotation_euler = self.objs[0].transformation.rotation_euler.copy() 
-        #     self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] += np.pi
-        #     self.cam.transformation.rotation_center = self.objs[0].transformation.translation + self.objs[0].transformation.rotation_center
-        #     self.cam.transformation.translation = self.objs[0].transformation.translation + pyrr.Vector3([0, 1, 5])
 
 
 
@@ -305,6 +300,7 @@ def main():
         o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
         viewer.add_object(o)
 
+    # Spheres
     for i in range(number_of_objects2):
         object_data = object_list2[i]
         o = Object3D(object_data[0], nb_triangle2, program3d_id, texture2, object_data[1])
