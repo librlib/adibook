@@ -8,13 +8,14 @@ import numpy as np
 import time
 import glutils
 from mesh import Mesh
+from astre import Astre
+from cube import Cube
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import constants
 from math import sqrt
 
 start_time = time.time()
 inventaire_state = False
-map_state = False
 
 
 class ViewerGL:
@@ -42,6 +43,7 @@ class ViewerGL:
 
         self.objs = []
         self.touch = {}
+        self.planet= []
 
         # Variables liées au mouvement de la souris
         self.pitch = 0
@@ -61,6 +63,8 @@ class ViewerGL:
                     self.update_camera(obj.program)
                 obj.draw()
 
+            for object in object_list2 :
+                return
             # changement de buffer d'affichage pour éviter un effet de scintillement
             glfw.swap_buffers(self.window)
             # gestion des évènements
@@ -184,26 +188,19 @@ class ViewerGL:
             self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] -= 0.1
         if glfw.KEY_L in self.touch and self.touch[glfw.KEY_L] > 0:
             self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] += 0.1
+        
+        # Création du timer et affichage
         if start_time != 0:
             vao = Text.initalize_geometry()
             texture = glutils.load_texture('fontB.jpg')
             #print('getting into E')
             new_time = time.time()
-            o = Text(str(-(start_time-new_time)), np.array([-0.10, 0.90], np.float32), np.array([0.90, 0.99], np.float32), vao, 2, programGUI_id, texture)
+            o = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
             ViewerGL.del_object(viewer, 'timer')
             ViewerGL.add_object(viewer, o)
-        elif map_state == False :
-            m = Mesh()
-            p0, p1, p2, p3 = [-120, 0, -120], [120, 0, -120], [120, 0, 120], [-120, 0, 120]
-            n, c = [0, 1, 0], [1, 1, 1]
-            t0, t1, t2, t3 = [0, 0], [1, 0], [1, 1], [0, 1]
-            m.vertices = np.array([[p0 + n + c + t0], [p1 + n + c + t1], [p2 + n + c + t2], [p3 + n + c + t3]], np.float32)
-            m.faces = np.array([[0, 1, 2], [0, 2, 3]], np.uint32)
-            texture = glutils.load_texture('circuit.jpg')
-            o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, Transformation3D())
-            viewer.add_object(o)
-            map_state = True
-        if glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
+        
+        # Création de l'inventaire lors de la pression de la touche E
+        while glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
                 texture = glutils.load_texture('inventory_test.jpg')
@@ -218,6 +215,7 @@ class ViewerGL:
 viewer = ViewerGL()
 programGUI_id = glutils.create_program_from_file('gui.vert', 'gui.frag')
 program3d_id = glutils.create_program_from_file('shader.vert', 'shader.frag')
+object_list2 = []
 def main():
     
 
@@ -251,62 +249,54 @@ def main():
     # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
     # viewer.add_object(o)
 
-    m = Mesh.load_obj('cube.obj')
-    m2 = Mesh.load_obj('sphere.obj')
-    m.normalize()
-    m2.normalize()
-    m.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
-    m2.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
-    nb_triangle = m.get_nb_triangles()
-    nb_triangle2 = m2.get_nb_triangles()
-    tr_translation_y = -np.amin(m.vertices, axis=0)[1]
-    tr_translation_y2 = -np.amin(m2.vertices, axis=0)[1]
+    # Cubes
+    cubeMesh = Mesh.load_obj('cube.obj')
+    cubeMesh.normalize()
+    cubeMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+    tr_translation_y = -np.amin(cubeMesh.vertices, axis=0)[1]
+    object_list_chara = []
+    Chara = Cube(0, tr_translation_y, -5,cubeMesh, object_list_chara)
+    Chara2 = Cube(0, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara3 = Cube(5, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara4 = Cube(0, tr_translation_y, 3,cubeMesh, object_list_chara)
+
+    # Spheres
+    sphereMesh = Mesh.load_obj('sphere.obj')
+    sphereMesh.normalize()
+    sphereMesh.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
+    tr_translation_y2 = -np.amin(sphereMesh.vertices, axis=0)[1]
+    object_list_astre = []
+    Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+    Moon = Astre(1, tr_translation_y2, -80,sphereMesh, "moon", object_list_astre)
+
+    # Every chara
+    
+    object_list_chara.append(Chara)
+    object_list_chara.append(Chara2)
+    object_list_chara.append(Chara3)
+    object_list_chara.append(Chara4)
+
+    # Every astre
+    
+    object_list_astre.append(Sun)
+    object_list_astre.append(Moon)
+
+
     # Creates vao ids and coordinates
     # create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z)
     # y is the altitude. z is front and back. x is left or right
-    object_list = []
-    object_list2 = []
 
-    # Cubes
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-
-    # Spheres
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, 80, 0.2)
-    object_list2.append(object_data)
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, -80, 0.2)
-    object_list2.append(object_data)
-    texture = glutils.load_texture('cube.jpg')
-    texture2 = glutils.load_texture('sun2.png')
-    texture3 = glutils.load_texture('moon2.png')
-
-
-    number_of_objects = len(object_list)
-    number_of_objects2 = len(object_list2)
-    for i in range(number_of_objects):
-        object_data = object_list[i]
-        o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
-        viewer.add_object(o)
-
-    # Spheres
-    for i in range(number_of_objects2):
-        object_data = object_list2[i]
-        o = Object3D(object_data[0], nb_triangle2, program3d_id, texture2, object_data[1])
-        texture2 = texture3
-        viewer.add_object(o)
     
+
+    # Add to viewer
+    Chara.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara2.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara3.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara4.add_viewer( viewer, object_list_chara, program3d_id)
+    Sun.add_viewer( viewer, object_list_astre, program3d_id)
+    Moon.add_viewer( viewer, object_list_astre, program3d_id)
+    
+
 
     # Circuit mario
     m = Mesh()
