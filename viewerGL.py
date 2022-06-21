@@ -8,6 +8,8 @@ import numpy as np
 import time
 import glutils
 from mesh import Mesh
+from astre import Astre
+from cube import Cube
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import constants
 from math import sqrt
@@ -15,7 +17,6 @@ import fleur
 
 start_time = time.time()
 inventaire_state = False
-map_state = False
 
 class ViewerGL:
     def __init__(self):
@@ -55,6 +56,7 @@ class ViewerGL:
         self.flowers = []
         self.timer = None
         self.touch = {}
+        self.planet= []
 
         self.prog = None
 
@@ -95,6 +97,8 @@ class ViewerGL:
                         print("Une plante collectée !")
                         self.del_flower(flower)
 
+            for object in object_list2 :
+                return
             # changement de buffer d'affichage pour éviter un effet de scintillement
             glfw.swap_buffers(self.window)
             # gestion des évènements
@@ -206,27 +210,31 @@ class ViewerGL:
             vao = Text.initalize_geometry()
             texture = glutils.load_texture('fontB.jpg')
             new_time = time.time()
-            # Remplacer l'ancien timer par le nouveau
-            self.timer = Text(str(-(start_time-new_time)), np.array([-0.10, 0.90], np.float32), np.array([0.90, 0.99], np.float32), vao, 2, programGUI_id, texture)
-        elif map_state == False :
-            m = Mesh()
-            p0, p1, p2, p3 = [-120, 0, -120], [120, 0, -120], [120, 0, 120], [-120, 0, 120]
-            n, c = [0, 1, 0], [1, 1, 1]
-            t0, t1, t2, t3 = [0, 0], [1, 0], [1, 1], [0, 1]
-            m.vertices = np.array([[p0 + n + c + t0], [p1 + n + c + t1], [p2 + n + c + t2], [p3 + n + c + t3]], np.float32)
-            m.faces = np.array([[0, 1, 2], [0, 2, 3]], np.uint32)
-            texture = glutils.load_texture('circuit.jpg')
-            o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, Transformation3D())
-            viewer.add_object(o)
-            map_state = True
-        if glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
+            o = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
+            ViewerGL.del_object(viewer, 'timer')
+            ViewerGL.add_object(viewer, o)
+        
+        # Création de l'inventaire lors de la pression de la touche E
+        while glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
-                texture = glutils.load_texture('circuit.jpg')
-                self.timer = Text('test', np.array([-0.10, 0.90], np.float32), np.array([0.30, 0.3], np.float32), vao, 2, programGUI_id, texture)
+                texture = glutils.load_texture('inventory_test.jpg')
+                o = Text('B', np.array([-0.10, 0.20], np.float32), np.array([0.80, 0.9], np.float32), vao, 2, programGUI_id, texture)
+                ViewerGL.del_object(viewer, 'timer')
+                ViewerGL.add_object(viewer, o)
             return
-        
-    # PLACEMENT DE NOUVELLES FLEURS
+
+        # Sun's Movement 
+        while glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
+            #print(self.objs)
+            self.objs[35].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, 0.2, -0.3]))
+            #Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+            #object_list_astre.append(Sun)
+            #Sun.add_viewer( viewer, object_list_astre, program3d_id)
+            return
+
+            # PLACEMENT DE NOUVELLES FLEURS
         if glfw.KEY_SPACE in self.touch and self.touch[glfw.KEY_SPACE] > 0:
             global montMesh, fMeshStg1, fMeshStg2
 
@@ -297,51 +305,80 @@ def main():
     viewer.cam.transformation.translation.y = 2
     viewer.cam.transformation.rotation_center = viewer.cam.transformation.translation.copy()
 
-    m = Mesh.load_obj('cube.obj')
-    m2 = Mesh.load_obj('sphere.obj')
-    m.normalize()
-    m2.normalize()
-    m.apply_matrix(pyrr.matrix44.create_from_scale([0, 0, 0, 0]))
-    m2.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
-    nb_triangle = m.get_nb_triangles()
-    nb_triangle2 = m2.get_nb_triangles()
-    tr_translation_y = -np.amin(m.vertices, axis=0)[1]
-    tr_translation_y2 = -np.amin(m2.vertices, axis=0)[1]
-    object_list = []
-    object_list2 = []
+    
+    #programGUI_id = glutils.create_program_from_file('gui.vert', 'gui.frag')
+
+    # m = Mesh.load_obj('stegosaurus.obj')
+    # m.normalize()
+    # m.apply_matrix(pyrr.matrix44.create_from_scale([2, 2, 2, 1]))
+    # tr = Transformation3D()
+    # tr.translation.y = -np.amin(m.vertices, axis=0)[1]
+    # tr.translation.z = -5
+    # tr.rotation_center.z = 0.2
+    # texture = glutils.load_texture('stegosaurus.jpg')
+    # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
+    # viewer.add_object(o)
+
+    # Carré censé représenter le joueur
+    # m = Mesh(.load_obj('stegosaurus.obj'))
+    # m.normalize()
+    # m.apply_matrix(pyrr.matrix44.create_from_scale([2, 2, 2, 1]))
+    # tr = Transformation3D()
+    # tr.translation.y = -np.amin(m.vertices, axis=0)[1]
+    # tr.translation.z = -5
+    # tr.rotation_center.z = 0.2
+    # texture = glutils.load_texture('stegosaurus.jpg')
+    # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
+    # viewer.add_object(o)
 
     # Cubes
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
-    object_list.append(object_data)
+    cubeMesh = Mesh.load_obj('cube.obj')
+    cubeMesh.normalize()
+    cubeMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+    tr_translation_y = -np.amin(cubeMesh.vertices, axis=0)[1]
+    object_list_chara = []
+    Chara = Cube(0, tr_translation_y, -5,cubeMesh, object_list_chara)
+    Chara2 = Cube(0, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara3 = Cube(5, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara4 = Cube(0, tr_translation_y, 3,cubeMesh, object_list_chara)
 
     # Spheres
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, 80, 0.2)
-    object_list2.append(object_data)
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, -80, 0.2)
-    object_list2.append(object_data)
-    texture = glutils.load_texture('cube.jpg')
-    texture2 = glutils.load_texture('sun2.png')
-    texture3 = glutils.load_texture('moon2.png')
+    sphereMesh = Mesh.load_obj('sphere.obj')
+    sphereMesh.normalize()
+    sphereMesh.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
+    tr_translation_y2 = -np.amin(sphereMesh.vertices, axis=0)[1]
+    object_list_astre = []
+    Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+    Moon = Astre(1, tr_translation_y2, -80,sphereMesh, "moon", object_list_astre)
+
+    # Every chara
+    
+    object_list_chara.append(Chara)
+    object_list_chara.append(Chara2)
+    object_list_chara.append(Chara3)
+    object_list_chara.append(Chara4)
+
+    # Every astre
+    
+    object_list_astre.append(Sun)
+    object_list_astre.append(Moon)
 
 
-    number_of_objects = len(object_list)
-    number_of_objects2 = len(object_list2)
-    for i in range(number_of_objects):
-        object_data = object_list[i]
-        o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
-        viewer.add_object(o)
+    # Creates vao ids and coordinates
+    # create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z)
+    # y is the altitude. z is front and back. x is left or right
 
-    for i in range(number_of_objects2):
-        object_data = object_list2[i]
-        o = Object3D(object_data[0], nb_triangle2, program3d_id, texture2, object_data[1])
-        texture2 = texture3
-        viewer.add_object(o)
+    
 
-    # Affichage d'une fleur au milieu pour le test
-    #fleur_obj = fleur.Fleur(viewer, program3d_id, 0, 0, montMesh, fMeshStg1, fMeshStg2)
+    # Add to viewer
+    Chara.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara2.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara3.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara4.add_viewer( viewer, object_list_chara, program3d_id)
+    Sun.add_viewer( viewer, object_list_astre, program3d_id)
+    Moon.add_viewer( viewer, object_list_astre, program3d_id)
+    
 
-    # Ajout de la fleur à la liste des fleurs pour le viewer
-    #viewer.add_flower(fleur_obj)
 
     # Circuit mario
     m = Mesh()
