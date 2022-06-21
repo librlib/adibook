@@ -240,7 +240,7 @@ class ViewerGL:
             # Update le timer sur l'affichage
             if self.timer in self.objs:
                 self.del_object(self.timer)
-            self.timer = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
+            self.timer = Text(str(round((new_time-start_time)%24,2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
             self.add_object(self.timer)
         
         # Création de l'inventaire lors de la pression de la touche E
