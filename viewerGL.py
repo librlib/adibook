@@ -12,7 +12,7 @@ from astre import Astre
 from cube import Cube
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import constants
-from math import sqrt
+from math import sqrt, sin, cos, tan
 import fleur
 
 start_time = time.time()
@@ -39,7 +39,9 @@ class ViewerGL:
         # Setup le raw motion, pour un mouvement naturel de la camera 3D
         if glfw.raw_mouse_motion_supported():
             glfw.set_input_mode(self.window, glfw.RAW_MOUSE_MOTION, glfw.TRUE)
-        
+        # Clique souris
+        glfw.set_mouse_button_callback(self.window, self.mouse_button_callback)
+
         # Placer la souris au centre de l'écran
         glfw.set_cursor_pos(self.window, 400, 400)
         
@@ -106,20 +108,49 @@ class ViewerGL:
         self.touch[key] = action
     
     def cursor_position_callback(self, window, xpos, ypos):
-        print(xpos, ypos)
-
         dx = xpos - 400
         dy = ypos - 400
 
         #self.cam.transformation.rotation_euler[pyrr.euler.index().yaw] += dx
-        self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] += dx*0.001
-        self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] += dy*0.001
+        self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] += dx*0.003
+        self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] += dy*0.003
+
+        # Roll entre -pi/2 et pi/2
+        if self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] > np.pi/2:
+            self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] = np.pi/2
+        if self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] < -np.pi/2:
+            self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll] = -np.pi/2
 
         # Placer la souris au centre de l'écran
         glfw.set_cursor_pos(self.window, 400, 400)
 
-
-
+    def mouse_button_callback(self, window, button, action, mods):
+        if (button == glfw.MOUSE_BUTTON_LEFT and action == glfw.PRESS):
+          # Calculer le point d'intersection avec le plan, si l'angle est correct
+            roll = self.objs[0].transformation.rotation_euler[pyrr.euler.index().roll]
+            # Le yaw doit être modulo 2*pi
+            yaw = self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] % (2*np.pi)
+            # On essaye de planter la plante suffisament proche
+            if roll > np.pi / 5:
+              # Récupérer la position où planter la plante
+                # Déterminer la distance à laquelle planter la plante
+                d = abs(2/tan(roll))
+                print(d)
+                # et les coordonnées de la nouvelle plante
+                x = -d*cos(yaw) + self.cam.transformation.translation.x
+                z = d*sin(yaw) + self.cam.transformation.translation.z
+              # La planter
+               # Vérifier que la plante est suffisament loin des autres plantes
+                placeFlower = True
+                for flower in self.flowers:
+                    if dist(x, z, flower.pos_x, flower.pos_z) < 3:
+                        placeFlower = False
+                        break
+            
+                # Si la plante est plantable (pas trop près des autres) alors la planter !
+                if placeFlower:
+                    fleur_obj = fleur.Fleur(self, self.prog, x, z, self.montMesh, self.fleur1Mesh, self.fleur2Mesh)
+                    viewer.add_flower(fleur_obj)
     
     # Ajoute l'objet3D obj dans la liste des objets de la scène
     def add_object(self, obj):
@@ -196,6 +227,9 @@ class ViewerGL:
         # Appliquer la translation du joueur dans le jeu
         self.objs[0].transformation.translation += \
             pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([x_axis, 0, z_axis]))
+        
+        # S'assurer que la caméra reste à la bonne hauteur du sol
+        self.objs[0].transformation.translation.y = 2
 
 
         if start_time != 0:
@@ -214,9 +248,10 @@ class ViewerGL:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
                 texture = glutils.load_texture('inventory_test.jpg')
-                o = Text('B', np.array([-0.10, 0.20], np.float32), np.array([0.80, 0.9], np.float32), vao, 2, programGUI_id, texture)
-                ViewerGL.del_object(viewer, 'timer')
-                ViewerGL.add_object(viewer, o)
+                if self.timer in self.objs:
+                    self.del_object(self.timer)
+                self.timer = Text('B', np.array([-0.10, 0.20], np.float32), np.array([0.80, 0.9], np.float32), vao, 2, programGUI_id, texture)
+                self.add_object(self.timer)
             return
 
         # Sun's Movement 
@@ -237,29 +272,6 @@ class ViewerGL:
             #object_list_astre.append(Sun)
             #Sun.add_viewer( viewer, object_list_astre, program3d_id)
             return
-
-            # PLACEMENT DE NOUVELLES FLEURS
-        if glfw.KEY_SPACE in self.touch and self.touch[glfw.KEY_SPACE] > 0:
-            global montMesh, fMeshStg1, fMeshStg2
-
-            # Récupérer les coordonnées actuelles du joueur
-            GL.glUseProgram(self.prog)
-            loc = GL.glGetUniformLocation(self.prog, "translation_view")
-            if (loc == -1) :
-                print("Pas de variable uniforme : translation_view")
-            translation = self.cam.transformation.translation
-
-            # Vérifier que la plante (position caméra actuelle) est suffisament loin des autres plantes
-            placeFlower = True
-            for flower in self.flowers:
-                if dist(translation.x, translation.z, flower.pos_x, flower.pos_z) < 3:
-                    placeFlower = False
-                    break
-            
-            # Si la plante est plantable (pas trop près des autres) alors la planter !
-            if placeFlower:
-                fleur_obj = fleur.Fleur(self, self.prog, translation.x, translation.z, montMesh, fMeshStg1, fMeshStg2)
-                viewer.add_flower(fleur_obj)
 
     # Définis les variables du viewer associées aux Mesh
     def SetMesh(self, montMesh, fleur1Mesh, fleur2Mesh):
@@ -309,42 +321,14 @@ def main():
     viewer.cam.transformation.translation.y = 2
     viewer.cam.transformation.rotation_center = viewer.cam.transformation.translation.copy()
 
-    
-    #programGUI_id = glutils.create_program_from_file('gui.vert', 'gui.frag')
-
-    # m = Mesh.load_obj('stegosaurus.obj')
-    # m.normalize()
-    # m.apply_matrix(pyrr.matrix44.create_from_scale([2, 2, 2, 1]))
-    # tr = Transformation3D()
-    # tr.translation.y = -np.amin(m.vertices, axis=0)[1]
-    # tr.translation.z = -5
-    # tr.rotation_center.z = 0.2
-    # texture = glutils.load_texture('stegosaurus.jpg')
-    # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
-    # viewer.add_object(o)
-
-    # Carré censé représenter le joueur
-    # m = Mesh(.load_obj('stegosaurus.obj'))
-    # m.normalize()
-    # m.apply_matrix(pyrr.matrix44.create_from_scale([2, 2, 2, 1]))
-    # tr = Transformation3D()
-    # tr.translation.y = -np.amin(m.vertices, axis=0)[1]
-    # tr.translation.z = -5
-    # tr.rotation_center.z = 0.2
-    # texture = glutils.load_texture('stegosaurus.jpg')
-    # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
-    # viewer.add_object(o)
-
     # Cubes
     cubeMesh = Mesh.load_obj('cube.obj')
     cubeMesh.normalize()
-    cubeMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+    cubeMesh.apply_matrix(pyrr.matrix44.create_from_scale([0, 0, 0, 0]))
     tr_translation_y = -np.amin(cubeMesh.vertices, axis=0)[1]
     object_list_chara = []
-    Chara = Cube(0, tr_translation_y, -5,cubeMesh, object_list_chara)
-    Chara2 = Cube(0, tr_translation_y, 0,cubeMesh, object_list_chara)
-    Chara3 = Cube(5, tr_translation_y, 0,cubeMesh, object_list_chara)
-    Chara4 = Cube(0, tr_translation_y, 3,cubeMesh, object_list_chara)
+    Chara = Cube(0, tr_translation_y, 0,cubeMesh, object_list_chara)
+
 
     # Spheres
     sphereMesh = Mesh.load_obj('sphere.obj')
@@ -356,11 +340,7 @@ def main():
     Moon = Astre(1, tr_translation_y2, -80,sphereMesh, "moon", object_list_astre)
 
     # Every chara
-    
     object_list_chara.append(Chara)
-    object_list_chara.append(Chara2)
-    object_list_chara.append(Chara3)
-    object_list_chara.append(Chara4)
 
     # Every astre
     
@@ -376,9 +356,6 @@ def main():
 
     # Add to viewer
     Chara.add_viewer( viewer, object_list_chara, program3d_id)
-    Chara2.add_viewer( viewer, object_list_chara, program3d_id)
-    Chara3.add_viewer( viewer, object_list_chara, program3d_id)
-    Chara4.add_viewer( viewer, object_list_chara, program3d_id)
     Sun.add_viewer( viewer, object_list_astre, program3d_id)
     Moon.add_viewer( viewer, object_list_astre, program3d_id)
     
