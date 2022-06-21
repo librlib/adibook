@@ -97,8 +97,6 @@ class ViewerGL:
                         print("Une plante collectée !")
                         self.del_flower(flower)
 
-            for object in object_list2 :
-                return
             # changement de buffer d'affichage pour éviter un effet de scintillement
             glfw.swap_buffers(self.window)
             # gestion des évènements
@@ -210,9 +208,11 @@ class ViewerGL:
             vao = Text.initalize_geometry()
             texture = glutils.load_texture('fontB.jpg')
             new_time = time.time()
-            o = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
-            ViewerGL.del_object(viewer, 'timer')
-            ViewerGL.add_object(viewer, o)
+            # Update le timer sur l'affichage
+            if self.timer in self.objs:
+                self.del_object(self.timer)
+            self.timer = Text(str(round(-(start_time-new_time),2)), np.array([-0.10, 0.85], np.float32), np.array([0.9, 0.99], np.float32), vao, 2, programGUI_id, texture)
+            self.add_object(self.timer)
         
         # Création de l'inventaire lors de la pression de la touche E
         while glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
