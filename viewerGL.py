@@ -49,13 +49,13 @@ class ViewerGL:
         self.pitch = 0
         self.jaw = -90
 
-    def run(self):
+    def run(self,Sun, Moon):
         # boucle d'affichage
         while not glfw.window_should_close(self.window):
             # nettoyage de la fenêtre : fond et profondeur
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
-            self.update_key()
+            self.update_key(Sun,Moon)
 
             for obj in self.objs:
                 GL.glUseProgram(obj.program)
@@ -153,7 +153,7 @@ class ViewerGL:
     #     #     self.cam.transformation.rotation_center = self.objs[0].transformation.translation + self.objs[0].transformation.rotation_center
     #     #     self.cam.transformation.translation = self.objs[0].transformation.translation + pyrr.Vector3([0, 1, 5])
 
-    def update_key(self):
+    def update_key(self,Sun,Moon):
 
         # Mouvements clavier (avancer, reculer et aller sur les côtés gauche et droit)
         x_axis = 0
@@ -200,7 +200,7 @@ class ViewerGL:
             ViewerGL.add_object(viewer, o)
         
         # Création de l'inventaire lors de la pression de la touche E
-        while glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
+        if glfw.KEY_E in self.touch and self.touch[glfw.KEY_E] > 0:
             if inventaire_state == False:
                 vao = Text.initalize_geometry()
                 texture = glutils.load_texture('inventory_test.jpg')
@@ -210,10 +210,19 @@ class ViewerGL:
             return
 
         # Sun's Movement 
-        while glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
-            #print(self.objs)
+        if glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
+
+            # Nouvelle coordo des astres
+            (z_sun,y_sun) = Sun.rotation()
+            (z_moon,y_moon) = Moon.rotation()
+
+            # Rotation du Sun 
             self.objs[35].transformation.translation += \
-            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, 0.2, -0.3]))
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, y_sun, z_sun]))
+
+            # Rotation du Moon
+            self.objs[39].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[39].transformation.rotation_euler), pyrr.Vector3([0, y_moon, z_moon]))
             #Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
             #object_list_astre.append(Sun)
             #Sun.add_viewer( viewer, object_list_astre, program3d_id)
@@ -336,7 +345,7 @@ def main():
     #o = Text(str(new_time), np.array([0.70, 0.9], np.float32), np.array([0.97, 0.99], np.float32), vao, 2, programGUI_id, texture)
     #ViewerGL.del_object(viewer)
     #ViewerGL.add_object(viewer, o)
-    viewer.run()
+    viewer.run(Sun, Moon)
 
     
 

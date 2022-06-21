@@ -8,7 +8,7 @@ import glutils
 from mesh import Mesh
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import constants
-from math import sqrt
+from math import sqrt, cos, sin 
 
 
 class Astre():
@@ -26,10 +26,13 @@ class Astre():
         self.pos_x = pos_x
         self.pos_y = pos_y
         self.pos_z = pos_z
+        self.pos_z_new = 0
+        self.pos_y_new = 0
 
         # Centre de rotation, on prend le plan comme référence
+        # + Angle de rotation
         #tr.rotation_center.z = tr_rotation_center_z
-
+        self.angle = 0
         # Nb de Triangles
         self.nb_triangle = sphereMesh.get_nb_triangles()
 
@@ -51,3 +54,60 @@ class Astre():
     #    glTranslated(0,0,0);
     #    glrotated(0.f,0.f, time * step);
     #    dessineObjetA();
+
+    def rotation(self):
+        if self.angle <= 90 :
+            self.angle += 1
+            self.pos_z_new = 80*cos(self.angle + (self.angle+90))
+            self.pos_y_new = 80*sin(self.angle + (self.angle+90))
+
+            self.pos_z -= self.pos_z_new
+            if self.pos_y != 0:
+                
+                self.pos_y_new -= self.pos_y
+            else:
+                self.pos_y = self.pos_y_new
+            return -self.pos_z, self.pos_y
+
+        if self.angle >= 90 and self.angle <= 180:
+            self.angle += 1
+            self.pos_z_new = 80*cos(self.angle + (self.angle+90))
+            self.pos_y_new = 80*sin(self.angle + (self.angle+90))
+
+            self.pos_y -= self.pos_y_new
+            if self.pos_z != 0:
+                self.pos_z += self.pos_z_new
+                
+            else :
+                self.pos_z = self.pos_z_new
+            return -self.pos_z, -self.pos_y
+
+        if self.angle >= 180 and self.angle <= 270:
+            self.angle += 1
+            self.pos_z_new = 80*cos(self.angle + (self.angle+90))
+            self.pos_y_new = 80*sin(self.angle + (self.angle+90))
+
+            self.pos_z -= self.pos_z_new
+            if self.pos_y != 0:
+                
+                self.pos_y -= self.pos_y_new
+            else:
+                self.pos_y = self.pos_y_new
+            return -self.pos_z, -self.pos_y
+
+        if self.angle >= 270 :
+            self.angle += 1
+            self.pos_z_new = 80*cos(self.angle + (self.angle+90))
+            self.pos_y_new = 80*sin(self.angle + (self.angle+90))
+
+            self.pos_y -= self.pos_y_new
+            if self.pos_z != 0:
+                self.pos_z -= self.pos_z_new
+            else:
+                self.pos_z = self.pos_z_new
+            
+            return -self.pos_z, -self.pos_y
+
+
+
+
