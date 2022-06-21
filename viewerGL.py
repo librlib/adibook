@@ -8,6 +8,8 @@ import numpy as np
 import time
 import glutils
 from mesh import Mesh
+from astre import Astre
+from cube import Cube
 from cpe3d import Object3D, Camera, Transformation3D, Text
 import constants
 from math import sqrt
@@ -207,6 +209,16 @@ class ViewerGL:
                 ViewerGL.add_object(viewer, o)
             return
 
+        # Sun's Movement 
+        while glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
+            #print(self.objs)
+            self.objs[35].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, 0.2, -0.3]))
+            #Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+            #object_list_astre.append(Sun)
+            #Sun.add_viewer( viewer, object_list_astre, program3d_id)
+            return
+
 
 
 
@@ -247,64 +259,54 @@ def main():
     # o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
     # viewer.add_object(o)
 
-    m = Mesh.load_obj('cube.obj')
+    # Cubes
+    cubeMesh = Mesh.load_obj('cube.obj')
+    cubeMesh.normalize()
+    cubeMesh.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
+    tr_translation_y = -np.amin(cubeMesh.vertices, axis=0)[1]
+    object_list_chara = []
+    Chara = Cube(0, tr_translation_y, -5,cubeMesh, object_list_chara)
+    Chara2 = Cube(0, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara3 = Cube(5, tr_translation_y, 0,cubeMesh, object_list_chara)
+    Chara4 = Cube(0, tr_translation_y, 3,cubeMesh, object_list_chara)
+
+    # Spheres
     sphereMesh = Mesh.load_obj('sphere.obj')
+    sphereMesh.normalize()
     sphereMesh.apply_matrix(pyrr.matrix44.create_from_scale([30, 30, 30, 30]))
-    Sun = Astre()
-    Moon = Astre()
-    m.normalize()
-    m2.normalize()
-    m.apply_matrix(pyrr.matrix44.create_from_scale([1, 1, 1, 1]))
-    nb_triangle = m.get_nb_triangles()
-    nb_triangle2 = m2.get_nb_triangles()
-    tr_translation_y = -np.amin(m.vertices, axis=0)[1]
-    tr_translation_y2 = -np.amin(m2.vertices, axis=0)[1]
+    tr_translation_y2 = -np.amin(sphereMesh.vertices, axis=0)[1]
+    object_list_astre = []
+    Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+    Moon = Astre(1, tr_translation_y2, -80,sphereMesh, "moon", object_list_astre)
+
+    # Every chara
+    
+    object_list_chara.append(Chara)
+    object_list_chara.append(Chara2)
+    object_list_chara.append(Chara3)
+    object_list_chara.append(Chara4)
+
+    # Every astre
+    
+    object_list_astre.append(Sun)
+    object_list_astre.append(Moon)
+
+
     # Creates vao ids and coordinates
     # create_instance(object, tr_translation_x, tr_translation_y, tr_translation_z, tr_rotation_center_z)
     # y is the altitude. z is front and back. x is left or right
-    object_list = []
+
     
 
-    # Cubes
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -5, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 0, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, 3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 0, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-    object_data = Mesh.create_instance(m, 5, tr_translation_y, -3, 0.2)
-    object_list.append(object_data)
-
-    # Spheres
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, 80, 0.2)
-    object_list2.append(object_data)
-    object_data = Mesh.create_instance(m2, 1, tr_translation_y2, -80, 0.2)
-    object_list2.append(object_data)
-    texture = glutils.load_texture('cube.jpg')
-    texture2 = glutils.load_texture('sun2.png')
-    texture3 = glutils.load_texture('moon2.png')
-
-
-    number_of_objects = len(object_list)
-    number_of_objects2 = len(object_list2)
-    for i in range(number_of_objects):
-        object_data = object_list[i]
-        o = Object3D(object_data[0], nb_triangle, program3d_id, texture, object_data[1])
-        viewer.add_object(o)
-
-    # Spheres
-    for i in range(number_of_objects2):
-        object_data = object_list2[i]
-        o = Object3D(object_data[0], nb_triangle2, program3d_id, texture2, object_data[1])
-        texture2 = texture3
-        viewer.add_object(o)
+    # Add to viewer
+    Chara.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara2.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara3.add_viewer( viewer, object_list_chara, program3d_id)
+    Chara4.add_viewer( viewer, object_list_chara, program3d_id)
+    Sun.add_viewer( viewer, object_list_astre, program3d_id)
+    Moon.add_viewer( viewer, object_list_astre, program3d_id)
     
+
 
     # Circuit mario
     m = Mesh()
