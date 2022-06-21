@@ -66,13 +66,13 @@ class ViewerGL:
         self.pitch = 0
         self.jaw = -90
 
-    def run(self,Sun, Moon):
+    def run(self):
         # boucle d'affichage
         while not glfw.window_should_close(self.window):
             # nettoyage de la fenêtre : fond et profondeur
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
-            self.update_key(Sun,Moon)
+            self.update_key()
 
             for obj in self.objs:
                 GL.glUseProgram(obj.program)
@@ -202,7 +202,7 @@ class ViewerGL:
             print("Pas de variable uniforme : projection")
         GL.glUniformMatrix4fv(loc, 1, GL.GL_FALSE, self.cam.projection)
 
-    def update_key(self,Sun,Moon):
+    def update_key(self):
 
         # Mouvements clavier (avancer, reculer et aller sur les côtés gauche et droit)
         x_axis = 0
@@ -258,16 +258,16 @@ class ViewerGL:
         if glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
 
             # Nouvelle coordo des astres
-            (z_sun,y_sun) = Sun.rotation()
-            (z_moon,y_moon) = Moon.rotation()
+            (z_sun,y_sun) = self.planet[0].rotation()
+            (z_moon,y_moon) = self.planet[1].rotation()
 
             # Rotation du Sun 
-            self.objs[35].transformation.translation += \
-            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, y_sun, z_sun]))
+            self.objs[5].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[5].transformation.rotation_euler), pyrr.Vector3([0, 1, 1]))
 
             # Rotation du Moon
-            self.objs[39].transformation.translation += \
-            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[39].transformation.rotation_euler), pyrr.Vector3([0, y_moon, z_moon]))
+            self.objs[6].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[6].transformation.rotation_euler), pyrr.Vector3([0, 1, 1]))
             #Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
             #object_list_astre.append(Sun)
             #Sun.add_viewer( viewer, object_list_astre, program3d_id)
@@ -359,7 +359,8 @@ def main():
     Sun.add_viewer( viewer, object_list_astre, program3d_id)
     Moon.add_viewer( viewer, object_list_astre, program3d_id)
     
-
+    viewer.planet.append(Sun)
+    viewer.planet.append(Moon)
 
     # Circuit mario
     m = Mesh()
@@ -390,7 +391,7 @@ def main():
     #o = Text(str(new_time), np.array([0.70, 0.9], np.float32), np.array([0.97, 0.99], np.float32), vao, 2, programGUI_id, texture)
     #ViewerGL.del_object(viewer)
     #ViewerGL.add_object(viewer, o)
-    viewer.run(Sun, Moon)
+    viewer.run()
 
     
 # Fonction pour déterminer la distance euclidienne entre deux points (plan 2D)
