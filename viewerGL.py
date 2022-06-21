@@ -209,6 +209,16 @@ class ViewerGL:
                 ViewerGL.add_object(viewer, o)
             return
 
+        # Sun's Movement 
+        while glfw.KEY_R in self.touch and self.touch[glfw.KEY_R] > 0:
+            #print(self.objs)
+            self.objs[35].transformation.translation += \
+            pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[35].transformation.rotation_euler), pyrr.Vector3([0, 0.2, -0.3]))
+            #Sun = Astre(1, tr_translation_y2, 80,sphereMesh, "sun", object_list_astre)
+            #object_list_astre.append(Sun)
+            #Sun.add_viewer( viewer, object_list_astre, program3d_id)
+            return
+
 
 
 
